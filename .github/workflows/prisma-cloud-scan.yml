@@ -32,7 +32,3 @@ jobs:
           # Define what to scan
           directory: .
           framework: terraform,kubernetes # Scan for both Terraform and Kubernetes files. Add others as needed.
-
-          # Add metadata to the scan results in Prisma Cloud
-          repo-id: ${{ github.repository }}
-          branch: ${{ github.ref_name }}
