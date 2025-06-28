@@ -1,0 +1,36 @@
+# .github/workflows/prisma-cloud-scan.yml
+
+name: Prisma Cloud IaC Scan
+
+# This section defines when the workflow will run.
+# Here, it runs on every push to the 'main' branch and on pull requests targeting 'main'.
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  prisma_cloud_scan:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checks out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up the Prisma Cloud CLI tool
+      # This action downloads and configures the 'bridgecrew' CLI.
+      - name: Set up Prisma Cloud CLI
+        uses: bridgecrewio/setup-cli@main
+        with:
+          prisma-api-url: ${{ secrets.PRISMA_API_URL }}
+          # The API key is passed securely from GitHub Secrets
+          api-key: ${{ secrets.PRISMA_ACCESS_KEY_ID }}::${{ secrets.PRISMA_SECRET_KEY }}
+
+      # Step 3: Run the Prisma Cloud scan
+      # This command scans the entire repository for IaC misconfigurations, vulnerabilities, and more.
+      - name: Run Prisma Cloud scan
+        run: |
+          bridgecrew -d . --repo-id ${{ github.repository }} --branch ${{ github.ref_name }}
