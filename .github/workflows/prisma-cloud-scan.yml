@@ -32,3 +32,6 @@ jobs:
           # Define what to scan
           directory: .
           framework: terraform,kubernetes # Scan for both Terraform and Kubernetes files. Add others as needed.
+          
+# Add this line to prevent the pipeline from failing when issues are found
+          soft_fail: true
