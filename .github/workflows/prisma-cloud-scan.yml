@@ -3,7 +3,7 @@
 name: Prisma Cloud IaC Scan
 
 # This section defines when the workflow will run.
-# Here, it runs on every push to the 'main' branch and on pull requests targeting 'main'.
+# The specific triggers are now defined within each job.
 on:
   push:
     branches: [ main ]
@@ -11,27 +11,39 @@ on:
     branches: [ main ]
 
 jobs:
-  prisma_cloud_scan:
-    # The type of runner that the job will run on
+  # This job runs on pull requests and will FAIL if issues are found.
+  # It performs a full scan on all the code in the pull request branch.
+  scan_pull_request:
     runs-on: ubuntu-latest
-
+    if: github.event_name == 'pull_request'
     steps:
-      # Step 1: Checks out your repository so the action can access your code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Run Prisma Cloud IaC Scan
-      # This single action downloads the scanner, authenticates, and runs the scan.
-      - name: Run Prisma Cloud Scan
-        uses: bridgecrewio/checkov-action@v12 # Using a stable version tag
+      - name: Run Prisma Cloud Scan on PR
+        uses: bridgecrewio/checkov-action@v12
         with:
-          # Authenticate with Prisma Cloud using the secrets you configured
           api-key: ${{ secrets.PRISMA_ACCESS_KEY_ID }}::${{ secrets.PRISMA_SECRET_KEY }}
           prisma-api-url: ${{ secrets.PRISMA_API_URL }}
-
-          # Define what to scan
           directory: .
-          #framework: terraform,kubernetes # Scan for both Terraform and Kubernetes files. Add others as needed.
-          
-# Add this line to prevent the pipeline from failing when issues are found
+          #framework: terraform,kubernetes
+          # By default, this will fail the job if issues are found in the scan.
+
+  # This job runs only on pushes to the 'main' branch for reporting.
+  # It will NOT fail, ensuring the main branch pipeline status reflects success.
+  scan_main_and_report:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run Prisma Cloud Scan on Main
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          api-key: ${{ secrets.PRISMA_ACCESS_KEY_ID }}::${{ secrets.PRISMA_SECRET_KEY }}
+          prisma-api-url: ${{ secrets.PRISMA_API_URL }}
+          directory: .
+          #framework: terraform,kubernetes
+          # This line ensures the pipeline passes even if issues are found on the main branch.
           soft_fail: true
