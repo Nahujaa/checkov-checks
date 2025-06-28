@@ -16,21 +16,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checks out your repository under $GITHUB_WORKSPACE, so your job can access it
+      # Step 1: Checks out your repository so the action can access your code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Set up the Prisma Cloud CLI tool
-      # This action downloads and configures the 'bridgecrew' CLI.
-      - name: Set up Prisma Cloud CLI
-        uses: bridgecrewio/setup-cli@main
+      # Step 2: Run Prisma Cloud IaC Scan
+      # This single action downloads the scanner, authenticates, and runs the scan.
+      - name: Run Prisma Cloud Scan
+        uses: bridgecrewio/checkov-action@v12 # Using a stable version tag
         with:
-          prisma-api-url: ${{ secrets.PRISMA_API_URL }}
-          # The API key is passed securely from GitHub Secrets
+          # Authenticate with Prisma Cloud using the secrets you configured
           api-key: ${{ secrets.PRISMA_ACCESS_KEY_ID }}::${{ secrets.PRISMA_SECRET_KEY }}
+          prisma-api-url: ${{ secrets.PRISMA_API_URL }}
 
-      # Step 3: Run the Prisma Cloud scan
-      # This command scans the entire repository for IaC misconfigurations, vulnerabilities, and more.
-      - name: Run Prisma Cloud scan
-        run: |
-          bridgecrew -d . --repo-id ${{ github.repository }} --branch ${{ github.ref_name }}
+          # Define what to scan
+          directory: .
+          framework: terraform,kubernetes # Scan for both Terraform and Kubernetes files. Add others as needed.
+
+          # Add metadata to the scan results in Prisma Cloud
+          repo-id: ${{ github.repository }}
+          branch: ${{ github.ref_name }}
